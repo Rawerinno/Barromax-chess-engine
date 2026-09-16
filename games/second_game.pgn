@@ -1,0 +1,36 @@
+[Event "Computer chess game"]
+[Site "RAWERS"]
+[Date "2026.09.16"]
+[Round "?"]
+[White "Barromax"]
+[Black "Barromax"]
+[Result "0-1"]
+[BlackElo "2200"]
+[ECO "B02"]
+[Opening "Alekhine"]
+[Time "04:17:08"]
+[Variation "Chase Variation"]
+[WhiteElo "2200"]
+[TimeControl "300"]
+[Termination "normal"]
+[PlyCount "92"]
+[WhiteType "program"]
+[BlackType "program"]
+
+1. e4 Nf6 {+0.14/3 2} 2. e5 Nd5 {-0.14/3 2} 3. c4 Nb4 {+0.06/3 2} 4. a3
+N4c6 {+0.07/3 2} 5. d4 d6 {0.00/3 2} 6. exd6 Qxd6 {+0.25/2 2} 7. Be3 e5
+{+0.39/2 2} 8. Nf3 exd4 {+0.67/2 2} 9. Nxd4 Be7 {+0.03/1 2} 10. Be2 O-O
+{+0.66/1 2} 11. O-O Rd8 {+0.06/2 3} 12. Nxc6 Nxc6 {+0.02/3 2} 13. Qxd6 Rxd6
+{0.00/3 2} 14. Bc5 Re6 {+0.55/3 2} 15. Bxe7 Rxe2 {+1.46/3 2} 16. Bc5 Rxb2
+{+1.13/3 2} 17. Nc3 Rd2 {+0.81/2 2} 18. Nd5 Be6 {+0.88/2 2} 19. Nxc7 Rad8
+{+0.68/3 3} 20. Nxe6 fxe6 {+0.04/3 2} 21. Rab1 b6 {+0.48/2 2} 22. Be3 R2d6
+{-0.29/3 2} 23. h3 e5 {-0.30/3 3} 24. c5 bxc5 {+0.04/3 2} 25. Bxc5 Rd2
+{-0.20/3 2} 26. Rb7 a6 {-0.26/2 2} 27. Rb6 Nd4 {-0.45/3 2} 28. Bxd4 R8xd4
+{-0.42/2 2} 29. Rxa6 h5 {-0.74/2 2} 30. Re6 Re2 {-0.90/3 3} 31. g3 h4
+{-0.63/3 3} 32. g4 Kf7 {-0.85/3 2} 33. Ra6 Rd7 {-0.72/3 2} 34. Kg2 Rd3
+{-0.74/3 2} 35. a4 Rg3+ {-0.63/3 2} 36. Kh1 Rxh3+ {+0.20/4 3} 37. Kg2 Rg3+
+{+1.46/4 2} 38. Kh2 Rxg4 {+1.31/4 3} 39. Kh3 Rd4 {+1.65/2 2} 40. a5 Ra4
+{+1.16/2 2} 41. Ra7+ Kf6 {+1.01/2 2} 42. a6 Rea2 {+1.05/2 2} 43. Rg1 Rxf2
+{+1.54/2 2} 44. Raxg7 Ra3+ {+3.30/3 2} 45. Kxh4 Rh2+ {+3.92/3 2} 46. Kg4
+Kxg7 {+3.92/3 2 White resigns} 0-1
+
