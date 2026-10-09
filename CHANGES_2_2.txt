@@ -1,0 +1,68 @@
+BARROMAX 2.2 - alterações sobre a 2.1
+
+Objetivo principal: aumentar depth efetivo sem aumentar artificialmente o
+max_depth nem dar mais tempo à engine.
+
+1. Static evaluation cache
+   - nova cache limitada a 50 000 avaliações clássicas
+   - chave inclui Zobrist, halfmove_clock e fullmove_number
+   - usada na quiescence, futility, reverse futility e null move
+   - novos stats: eval_cache_hits
+
+2. Avaliação clássica mais barata
+   - evaluate_classic_board() passa a construir piece_map() uma vez
+   - o mesmo piece_map é reutilizado para calcular phase e material/PST
+
+3. Reverse Futility Pruning (RFP)
+   - apenas em narrow-window / non-PV
+   - depth 1: margem 120 cp
+   - depth 2: margem 250 cp
+   - depth 3: margem 380 cp
+   - protegido perto de scores de mate e quando o rei está em xeque
+
+4. Late Move Pruning (LMP)
+   - apenas em narrow-window / non-PV e depths baixos
+   - depth 1: após 6 quiet moves
+   - depth 2: após 10 quiet moves
+   - depth 3: após 16 quiet moves
+   - não poda checks, TT move, killers, peões avançados nem bons history moves
+   - novos stats: lmp_prunes
+
+5. Null Move adaptativo
+   - só tenta null move quando static_eval >= beta
+   - redução: min(4, 2 + depth // 6)
+   - evita null move consecutivo através de allow_null=False no filho null
+   - apenas em narrow-window / non-PV
+   - novos stats: null_cutoffs
+
+6. Menos trabalho repetido por nó
+   - board.is_check() e narrow-window são calculados uma vez por nó
+   - killer list é obtida uma vez antes do loop de lances
+   - static_eval é reutilizada entre RFP / Null Move / Futility
+
+7. Benchmark de depth
+   - novo benchmark_depth.py
+   - 6 posições de abertura/meio-jogo
+   - 5 segundos por posição
+   - mostra depth, nodes, NPS, TT hits, eval-cache hits, RFP, LMP e null cutoffs
+
+8. Versão / launcher
+   - UCI: Barromax 2.2
+   - Barromax_2_2.bat usa %~dp0, portanto a pasta pode ser movida sem alterar
+     o caminho do uci.py
+
+MANTIDO DA 2.1:
+   - AI root ordering ativa (USE_AI = True)
+   - AI root batching/cache
+   - SEE
+   - LMR adaptativo
+   - futility pruning
+   - modelo barromax_ai.pt inalterado; não precisa de novo treino
+
+TESTES RECOMENDADOS NO PC:
+    python test_engine.py
+    python test_see.py
+    python benchmark_depth.py
+
+Para comparar depth de forma justa, correr benchmark_depth.py primeiro na 2.1
+e depois na 2.2 com a mesma máquina e sem outros programas pesados a correr.

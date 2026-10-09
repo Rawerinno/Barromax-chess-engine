@@ -17,7 +17,7 @@ from engine import (
 DATA_DIR = "data"
 DATA_PATH = os.path.join(DATA_DIR, "selfplay_positions.jsonl")
 
-GAMES_TO_GENERATE = 50
+GAMES_TO_GENERATE = 500
 TIME_PER_MOVE = 0.15
 MAX_DEPTH = 6
 MAX_PLIES = 160

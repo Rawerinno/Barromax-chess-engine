@@ -10,14 +10,14 @@ from engine import (
 )
 
 
-ENGINE_NAME = "Barromax"
+ENGINE_NAME = "Barromax 2.3"
 ENGINE_AUTHOR = "Barro"
 
 board = chess.Board()
 
 DEFAULT_DEPTH = 3
 DEFAULT_TIME = 1.0
-MAX_THINK_TIME = 3.0
+MAX_THINK_TIME = 8.0
 MIN_THINK_TIME = 0.10
 
 
@@ -29,7 +29,7 @@ def send_engine_id():
     send(f"id name {ENGINE_NAME}")
     send(f"id author {ENGINE_AUTHOR}")
     send("option name Hash type spin default 64 min 1 max 1024")
-    send("option name MaxThinkTime type spin default 3000 min 100 max 30000")
+    send("option name MaxThinkTime type spin default 8000 min 100 max 30000")
     send("option name Clear Hash type button")
 
 
@@ -150,9 +150,77 @@ def parse_setoption(command):
         MAX_THINK_TIME = milliseconds / 1000
 
 
+def position_time_factor(board):
+    moves = list(board.legal_moves)
+    move_count = len(moves)
+
+    # Se só existe uma jogada legal, não vale a pena pensar muito.
+    if move_count <= 1:
+        return 0.20
+
+    factor = 1.0
+
+    # Poucas opções = posição normalmente mais simples.
+    if move_count <= 5:
+        factor *= 0.55
+    elif move_count <= 10:
+        factor *= 0.75
+
+    # Muitas opções = normalmente vale a pena pensar mais.
+    elif move_count >= 30:
+        factor *= 1.25
+
+    # Estar em xeque pode exigir mais cuidado.
+    if board.is_check():
+        factor += 0.25
+
+    captures = 0
+    checks = 0
+
+    for move in moves:
+        if board.is_capture(move):
+            captures += 1
+
+        if board.gives_check(move):
+            checks += 1
+
+    # Muitas capturas possíveis = posição mais tática.
+    if captures >= 4:
+        factor += 0.25
+    elif captures == 0:
+        factor -= 0.10
+
+    # Vários xeques candidatos = posição potencialmente crítica.
+    if checks >= 2:
+        factor += 0.15
+
+    # Se o adversário acabou de capturar e existe uma recaptura
+    # bastante natural, reduz um pouco o tempo.
+    if board.move_stack:
+        last_move = board.peek()
+
+        previous_board = board.copy(stack=True)
+        previous_board.pop()
+
+        if previous_board.is_capture(last_move):
+            recaptures = [
+                move
+                for move in moves
+                if board.is_capture(move)
+                and move.to_square == last_move.to_square
+            ]
+
+            if len(recaptures) == 1:
+                factor *= 0.70
+
+    return max(0.35, min(1.75, factor))
+
+
 def choose_time_limit(parts):
     movetime = get_int_option(parts, "movetime")
 
+    # Se a GUI exigir explicitamente um movetime,
+    # respeitamos esse valor.
     if movetime is not None:
         return max(0.03, movetime / 1000 * 0.90)
 
@@ -172,16 +240,31 @@ def choose_time_limit(parts):
     seconds_remaining = remaining / 1000
     seconds_increment = increment / 1000
 
+    # Emergência de relógio.
     if seconds_remaining <= 0.20:
-        return max(0.01, seconds_remaining * 0.50)
+        return max(0.01, seconds_remaining * 0.40)
 
-    time_limit = seconds_remaining / 35
-    time_limit += seconds_increment * 0.60
+    # Tempo base.
+    base_time = seconds_remaining / 50
+    base_time += seconds_increment * 0.70
 
+    # Analisa a complexidade da posição.
+    factor = position_time_factor(board)
+
+    time_limit = base_time * factor
+
+    # Nunca pensar menos que o mínimo.
     time_limit = max(MIN_THINK_TIME, time_limit)
+
+    # Nunca ultrapassar o máximo configurado.
     time_limit = min(MAX_THINK_TIME, time_limit)
 
-    safe_limit = max(0.03, seconds_remaining * 0.80)
+    # Proteção contra gastar demasiado relógio num único lance.
+    safe_limit = max(
+        0.03,
+        seconds_remaining * 0.15 + seconds_increment * 0.50
+    )
+
     time_limit = min(time_limit, safe_limit)
 
     return time_limit
@@ -214,7 +297,7 @@ def send_search_info(depth, score, elapsed_ms):
 def parse_go(command):
     parts = command.split()
 
-    if board.is_game_over(claim_draw=True):
+    if board.is_game_over(claim_draw=False):
         send("bestmove 0000")
         return
 

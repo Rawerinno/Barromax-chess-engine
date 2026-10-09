@@ -42,40 +42,75 @@ def load_ai_model():
         return None
 
 
-def evaluate_ai_cp(board, scale=600):
+def _ai_cache_key(board, scale):
+    # O tensor inclui fullmove_number, por isso o cache também tem de o incluir.
+    return (
+        chess.polyglot.zobrist_hash(board),
+        board.fullmove_number,
+        int(scale),
+    )
+
+
+def evaluate_ai_batch_cp(boards, scale=600):
     """
-    Avaliação neural em centipawns.
+    Avalia várias posições numa única passagem pela rede.
 
     A rede devolve valor entre -1 e +1:
     +1 = bom para brancas
     -1 = bom para pretas
 
-    Depois convertemos para centipawns:
-    +1 -> +600
-    -1 -> -600
+    O resultado é convertido para centipawns.
     """
+    if not boards:
+        return []
 
     model = load_ai_model()
 
     if model is None:
-        return 0
+        return [0] * len(boards)
 
-    key = chess.polyglot.zobrist_hash(board)
+    scores = [None] * len(boards)
+    missing_indices = []
+    missing_boards = []
+    missing_keys = []
 
-    if key in _AI_CACHE:
-        return _AI_CACHE[key]
+    for index, board in enumerate(boards):
+        key = _ai_cache_key(board, scale)
 
-    x = board_to_tensor(board)
-    x = torch.tensor(x, dtype=torch.float32).unsqueeze(0)
+        if key in _AI_CACHE:
+            scores[index] = _AI_CACHE[key]
+        else:
+            missing_indices.append(index)
+            missing_boards.append(board)
+            missing_keys.append(key)
 
-    with torch.no_grad():
-        value = float(model(x).item())
+    if missing_boards:
+        batch = torch.stack(
+            [
+                torch.from_numpy(board_to_tensor(board))
+                for board in missing_boards
+            ],
+            dim=0,
+        ).float()
 
-    score = int(value * scale)
+        with torch.inference_mode():
+            values = model(batch).cpu().tolist()
 
-    if len(_AI_CACHE) >= _MAX_CACHE_SIZE:
-        _AI_CACHE.clear()
+        if len(_AI_CACHE) + len(missing_boards) >= _MAX_CACHE_SIZE:
+            _AI_CACHE.clear()
 
-    _AI_CACHE[key] = score
+        for index, key, value in zip(
+            missing_indices,
+            missing_keys,
+            values,
+        ):
+            score = int(float(value) * scale)
+            scores[index] = score
+            _AI_CACHE[key] = score
 
-    return score
+    return scores
+
+
+def evaluate_ai_cp(board, scale=600):
+    """Avaliação neural de uma única posição em centipawns."""
+    return evaluate_ai_batch_cp([board], scale=scale)[0]

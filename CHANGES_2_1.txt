@@ -1,0 +1,35 @@
+BARROMAX 2.1 - alterações sobre a 2.0
+
+1. AI de raiz otimizada
+   - avaliação dos filhos da raiz em batch PyTorch
+   - cache dos scores da raiz entre depths/aspiration re-searches
+   - cache neural passa a incluir fullmove_number e scale
+   - USE_AI = True continua fácil de desligar no engine.py
+
+2. SEE (Static Exchange Evaluation)
+   - ordena pior as capturas materialmente perdedoras
+   - SEE pruning conservador na quiescence
+   - cache SEE para evitar trabalho repetido
+
+3. Cavalos
+   - penalização por ataque/chase de peão reduzida para não desvalorizar
+     artificialmente o cavalo e incentivar trocas por dois peões
+
+4. Move ordering
+   - corrigido o bloco do centro: o elif do cavalo estava associado ao
+     if errado na versão 2.0
+
+5. Search
+   - LMR adaptativo para quiet moves tardios
+   - killer moves, peões avançados e bons history moves são protegidos
+   - futility pruning conservador em depth 1/2 e narrow windows
+
+6. Versão
+   - UCI: Barromax 2.1
+   - Barromax_2_1.bat aponta para chess_en_v2_1
+
+TESTES A CORRER NO PC:
+    python test_engine.py
+    python test_see.py
+
+O modelo barromax_ai.pt foi mantido; não é necessário treinar novamente.

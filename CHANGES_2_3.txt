@@ -1,0 +1,66 @@
+Barromax 2.3 - otimização de depth / NPS
+========================================
+
+Base: Barromax 2.2.
+Objetivo: pesquisar mais fundo no mesmo tempo sem simplesmente aumentar max_depth.
+
+Principais alterações
+---------------------
+1. Repetition counter incremental
+   - O histórico de hashes é reconstruído uma vez no início da pesquisa.
+   - Cada push/pop legal atualiza um contador O(1).
+   - negamax deixa de chamar board.is_repetition(2/3) em praticamente todos os nós.
+   - Null-move search não contamina o histórico real de repetição.
+
+2. Uma geração de lances legais por nó
+   - negamax e quiescence geram list(board.legal_moves) uma única vez por nó.
+   - A mesma lista serve para mate/stalemate, ordering e pesquisa.
+
+3. Um Zobrist principal por nó
+   - O node_key é calculado no push do filho e passado para negamax/qsearch.
+   - TT, static-eval cache, SEE e ordering reutilizam esse hash sempre que possível.
+
+4. Move picker por fases
+   - TT move
+   - promoções
+   - boas capturas / checking captures
+   - killer moves
+   - quiet moves por history/heurísticas
+   - capturas SEE-negativas
+   - Evita uma ordenação global cara com trabalho redundante.
+
+5. gives_check reutilizado
+   - Cada move recebe metadata MoveInfo.
+   - gives_check/is_capture/is_quiet são calculados uma vez no ordering e reutilizados no loop do search.
+
+6. Avaliação clássica mais bitboard-oriented
+   - Máscaras de ficheiro e passed-pawn pré-calculadas.
+   - Estrutura de peões, torres, king shield, knight pressure e center control usam mais bit operations.
+   - get_static_eval chama a avaliação com assume_nonterminal=True, evitando repetir testes caros de mate/draw.
+
+7. SEE mais leve
+   - Elimina board.copy() por chamada SEE.
+   - Faz push/pop no board original com restauração garantida.
+   - Procura o atacante legal menos valioso com generate_legal_captures por máscara.
+   - Reutiliza o hash do nó no SEE cache.
+
+Mantido da 2.2
+---------------
+- AI neural ativa apenas no root move ordering (batch + cache).
+- PVS, LMR adaptativo, Null Move adaptativo.
+- Futility pruning, Reverse Futility Pruning e LMP.
+- Quiescence depth 5, SEE pruning -80, delta pruning 150.
+- Early stop apenas a partir de depth 8.
+- Max search depth UCI continua 64.
+
+Testes recomendados
+-------------------
+1. python test_engine.py
+2. python test_see.py
+3. python benchmark_depth.py
+4. Torneio Arena 2.0 / 2.1 / 2.2 / 2.3 com mesmas condições.
+
+Nota
+----
+A sintaxe Python foi validada no ambiente de criação. O benchmark funcional deve
+ser executado no PC do utilizador, onde python-chess/PyTorch estão instalados.
